@@ -1,5 +1,8 @@
 {
   "name": "HASolarDev",
   "content_in_root": true,
-  "render_readme": true
+  "render_readme": true,
+  "filename": "HA_Solar_Dev.yaml",
+  "country": "RO",
+  "homeassistant": "2023.1.0"
 }
