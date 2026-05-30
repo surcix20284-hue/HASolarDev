@@ -4,7 +4,7 @@ A beautiful, fully animated solar dashboard card built with `custom:button-card`
 Displays real-time solar production, battery status, grid info and house load —  
 with a dynamic background and sun/moon that change based on the time of day.
 
-![preview](images/midday.png)
+![preview](images/Video Project 1_10s_web.gif)
 
 ---
 
