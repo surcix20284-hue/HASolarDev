@@ -1,0 +1,539 @@
+type: custom:button-card
+show_icon: false
+show_name: false
+entity: sensor.deye_grid_power
+styles:
+  card:
+    - aspect-ratio: 1672 / 941
+    - padding: 0
+    - overflow: hidden
+    - background-image: |
+        [[[
+          const sun = states["sun.sun"];
+          const attrs = sun?.attributes || {};
+          const now = new Date();
+          const night = sun?.state === "below_horizon";
+          const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+          function safeDate(iso) {
+            if (!iso) return null;
+            const d = new Date(iso);
+            return isNaN(d.getTime()) ? null : d;
+          }
+          function getStage() {
+            let rise = safeDate(attrs.next_rising);
+            let setTime = safeDate(attrs.next_setting);
+            const h = now.getHours() + now.getMinutes() / 60;
+            if (rise && rise > now) {
+              const beforeRiseStart = new Date(rise.getTime() - 30 * 60000);
+              if (now >= beforeRiseStart && now < rise) return "before_sunrise";
+            }
+            if (night) {
+              if (h >= 18 && h < 20) return "evening";
+              if (h >= 20 && h < 22) return "night";
+              if (h >= 22 || h < 1) return "night2";
+              return "late_night";
+            }
+            if (rise && rise > now) rise = new Date(rise.getTime() - 86400000);
+            if (setTime && rise && setTime < rise) setTime = new Date(setTime.getTime() + 86400000);
+            if (rise && setTime) {
+              const afterRiseEnd = new Date(rise.getTime() + 45 * 60000);
+              const beforeSetStart = new Date(setTime.getTime() - 45 * 60000);
+              const dayProgress = clamp((now - rise) / (setTime - rise), 0, 1);
+              if (now >= rise && now < afterRiseEnd) return "sunrise";
+              if (now >= afterRiseEnd && dayProgress < 0.38) return "morning";
+              if (dayProgress >= 0.38 && dayProgress < 0.62) return "midday";
+              if (dayProgress >= 0.62 && now < beforeSetStart) return "afternoon";
+              if (now >= beforeSetStart && now <= setTime) return "sunset";
+            }
+            return "midday";
+          }
+          const stage = getStage();
+          const bgMap = {
+            before_sunrise: "/local/before_sunrise.png",
+            sunrise: "/local/sunrise.png",
+            morning: "/local/morning.png",
+            midday: "/local/midday.png",
+            afternoon: "/local/afternoon.png",
+            sunset: "/local/sunset.png",
+            evening: "/local/evening.png",
+            night: "/local/night.png",
+            night2: "/local/night2.png",
+            late_night: "/local/late_night.png"
+          };
+          return `url("${bgMap[stage] || "/local/midday.png"}")`;
+        ]]]
+    - background-size: 100% 100%
+    - background-position: center
+    - border-radius: 0
+  custom_fields:
+    overlay:
+      - position: absolute
+      - inset: 0
+custom_fields:
+  overlay: |
+    [[[
+      const n = id => Number(states[id]?.state || 0);
+      const st = id => states[id]?.state ?? "";
+      const pv = n("sensor.deye_pv1_power") + n("sensor.deye_pv2_power");
+      const grid = n("sensor.deye_grid_power");
+      const batt = n("sensor.deye_battery_power");
+      const load = n("sensor.deye_output_l1_power");
+      const gridVoltage = n("sensor.deye_grid_l1_voltage");
+      const importToday = n("sensor.deye_today_energy_import");
+      const exportToday = n("sensor.deye_today_energy_export");
+      const battSoc = n("sensor.deye_battery");
+      const battTemp = n("sensor.deye_battery_temperature");
+      const invTemp = n("sensor.deye_temperature");
+      const gridOn = st("binary_sensor.deye_grid") === "on";
+      const gridImporting = grid < -20;
+      const battCharging = batt < -20;
+      const yellow = "#ffd12f";
+      const blue = "#3db8ff";
+      const green = "#00ff3c";
+      const red = "#ff4d4d";
+      const neonBlue = "#00e5ff";
+      const battFlowColor = battCharging ? yellow : blue;
+      const gridFlowColor = battFlowColor;
+      const fmtPower = w => Math.abs(w) < 1000
+        ? `${Math.round(Math.abs(w))} W`
+        : `${(Math.abs(w) / 1000).toFixed(2)} kW`;
+      const sun = states["sun.sun"];
+      const attrs = sun?.attributes || {};
+      const night = sun?.state === "below_horizon";
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      function safeDate(iso) {
+        if (!iso) return null;
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      const now = new Date();
+      let rise = safeDate(attrs.next_rising);
+      let setTime = safeDate(attrs.next_setting);
+      function getStage() {
+        const h = now.getHours() + now.getMinutes() / 60;
+        if (rise && rise > now) {
+          const beforeRiseStart = new Date(rise.getTime() - 30 * 60000);
+          if (now >= beforeRiseStart && now < rise) return "before_sunrise";
+        }
+        if (night) {
+          if (h >= 18 && h < 20) return "evening";
+          if (h >= 20 && h < 22) return "night";
+          if (h >= 22 || h < 1) return "night2";
+          return "late_night";
+        }
+        let r = rise;
+        let s = setTime;
+        if (r && r > now) r = new Date(r.getTime() - 86400000);
+        if (s && r && s < r) s = new Date(s.getTime() + 86400000);
+        if (r && s) {
+          const afterRiseEnd = new Date(r.getTime() + 45 * 60000);
+          const beforeSetStart = new Date(s.getTime() - 45 * 60000);
+          const dayProgress = clamp((now - r) / (s - r), 0, 1);
+          if (now >= r && now < afterRiseEnd) return "sunrise";
+          if (now >= afterRiseEnd && dayProgress < 0.38) return "morning";
+          if (dayProgress >= 0.38 && dayProgress < 0.62) return "midday";
+          if (dayProgress >= 0.62 && now < beforeSetStart) return "afternoon";
+          if (now >= beforeSetStart && now <= s) return "sunset";
+        }
+        return "midday";
+      }
+      const stage = getStage();
+      const moonVisible = ["evening", "night", "night2", "late_night"].includes(stage);
+      const sunThemeMap = {
+        before_sunrise: {
+          disc1: "#fff1d0",
+          disc2: "#ffc26a",
+          disc3: "#ff7e38",
+          disc4: "#ff5f4a",
+          glow1: "rgba(255,178,105,.72)",
+          glow2: "rgba(255,112,72,.38)",
+          glow3: "rgba(255,70,90,.14)",
+          ray: "#ffb36d",
+          label: "#ffb36d"
+        },
+        sunrise: {
+          disc1: "#fff8d8",
+          disc2: "#ffd56a",
+          disc3: "#ff9a25",
+          disc4: "#ff6b1f",
+          glow1: "rgba(255,214,116,.75)",
+          glow2: "rgba(255,145,46,.42)",
+          glow3: "rgba(255,90,25,.16)",
+          ray: "#ffd27a",
+          label: "#ffd12f"
+        },
+        morning: {
+          disc1: "#fffde8",
+          disc2: "#fff09a",
+          disc3: "#ffd337",
+          disc4: "#ffae24",
+          glow1: "rgba(255,240,150,.72)",
+          glow2: "rgba(255,210,65,.38)",
+          glow3: "rgba(255,170,20,.15)",
+          ray: "#ffe680",
+          label: "#ffd12f"
+        },
+        midday: {
+          disc1: "#ffffff",
+          disc2: "#fff7b5",
+          disc3: "#ffe03d",
+          disc4: "#ffc21d",
+          glow1: "rgba(255,252,200,.78)",
+          glow2: "rgba(255,225,80,.42)",
+          glow3: "rgba(255,190,30,.16)",
+          ray: "#fff1a0",
+          label: "#ffd12f"
+        },
+        afternoon: {
+          disc1: "#fff6d6",
+          disc2: "#ffd87a",
+          disc3: "#ffb136",
+          disc4: "#ff8c22",
+          glow1: "rgba(255,220,130,.74)",
+          glow2: "rgba(255,165,55,.42)",
+          glow3: "rgba(255,120,25,.16)",
+          ray: "#ffd27a",
+          label: "#ffd12f"
+        },
+        sunset: {
+          disc1: "#fff0c8",
+          disc2: "#ffb65f",
+          disc3: "#ff6a2a",
+          disc4: "#e9402f",
+          glow1: "rgba(255,170,95,.78)",
+          glow2: "rgba(255,90,45,.48)",
+          glow3: "rgba(220,45,70,.18)",
+          ray: "#ff9a5c",
+          label: "#ffb36d"
+        },
+        evening: {
+          disc1: "#ffe1b4",
+          disc2: "#ff9d6a",
+          disc3: "#d95f7d",
+          disc4: "#7b5cff",
+          glow1: "rgba(255,150,100,.50)",
+          glow2: "rgba(180,90,180,.32)",
+          glow3: "rgba(90,90,210,.12)",
+          ray: "#ff9d8a",
+          label: "#ffb36d"
+        }
+      };
+      const sunTheme = sunThemeMap[stage] || sunThemeMap.midday;
+      if (rise && rise > now) rise = new Date(rise.getTime() - 86400000);
+      if (setTime && rise && setTime < rise) setTime = new Date(setTime.getTime() + 86400000);
+      let arcProgress = 0.5;
+      if (!night && rise && setTime) {
+        arcProgress = clamp((now - rise) / (setTime - rise), 0, 1);
+      } else {
+        const h = now.getHours() + now.getMinutes() / 60;
+        arcProgress = clamp(h >= 18 ? (h - 18) / 12 : (h + 6) / 12, 0, 1);
+      }
+      const x1 = 90;
+      const y1 = 150;
+      const cx = 836;
+      const cy = -95;
+      const x2 = 1580;
+      const y2 = 150;
+      let skyX = Math.round((1 - arcProgress) * (1 - arcProgress) * x1 + 2 * (1 - arcProgress) * arcProgress * cx + arcProgress * arcProgress * x2);
+      let skyY = Math.round((1 - arcProgress) * (1 - arcProgress) * y1 + 2 * (1 - arcProgress) * arcProgress * cy + arcProgress * arcProgress * y2);
+      skyY = clamp(skyY, 58, 170);
+      const pvText = fmtPower(pv);
+      const pvFontSize = 50;
+      const pvBoxW = clamp(Math.round(pvText.length * 29 + 34), 165, 250);
+      const pvBoxH = 68;
+      let pvLabelX;
+      let pvLabelY;
+      if (arcProgress < 0.38) {
+        pvLabelX = skyX + 22;
+        pvLabelY = skyY - 6;
+      } else if (arcProgress < 0.68) {
+        pvLabelX = skyX - pvBoxW / 2;
+        pvLabelY = skyY + 50;
+      } else {
+        pvLabelX = skyX - pvBoxW - 38;
+        pvLabelY = skyY + 4;
+      }
+      pvLabelX = clamp(Math.round(pvLabelX), 25, 1672 - pvBoxW - 25);
+      pvLabelY = clamp(Math.round(pvLabelY), 24, 255);
+      if (pvLabelX < 335 && pvLabelY < 245) {
+        pvLabelX = 335;
+      }
+      const solarTargetX = 760;
+      const solarTargetY = 345;
+      const solarPath = `M ${skyX} ${skyY + 34} C ${skyX - 10} ${skyY + 105}, ${solarTargetX - 130} ${solarTargetY - 75}, ${solarTargetX} ${solarTargetY}`;
+      const gridToInv = "M 100 140 V 690 Q 100 720 130 720 H 370 Q 410 720 410 680 V 620";
+      const invToGrid = "M 410 620 V 680 Q 410 720 370 720 H 130 Q 100 720 100 690 V 140";
+      const gridPath = gridImporting ? gridToInv : invToGrid;
+      const invToBatt = "M 500 620 V 680 Q 500 720 540 720 H 1410 Q 1450 720 1450 680 V 545";
+      const battToInv = "M 1450 545 V 680 Q 1450 720 1410 720 H 540 Q 500 720 500 680 V 620";
+      const battPath = battCharging ? invToBatt : battToInv;
+      const invToLoad = "M 445 620 V 780 Q 445 820 405 820 H 190 Q 145 820 145 805";
+      const battSocSafe = clamp(battSoc, 0, 100);
+      const batteryColor =
+        battSocSafe <= 20 ? red :
+        battSocSafe <= 50 ? yellow :
+        green;
+      const battBarMaxH = 132;
+      const battBarH = Math.round(battBarMaxH * battSocSafe / 100);
+      const battBarW = 52;
+      const battBarX = 1442;
+      const battBarYTop = 494;
+      const battBarYBottom = battBarYTop + battBarMaxH;
+      const battBarY = battBarYBottom - battBarH;
+      const battCenterX = battBarX + battBarW / 2;
+      const tempBoxX = battBarX + battBarW + 18;
+      const tempBoxY = battBarYTop + 48;
+      const beam = (path, color, speed = "0.9") => `
+        <path d="${path}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity=".45" filter="url(#beamGlow)"/>
+        <path d="${path}" fill="none" stroke="${color}" stroke-width="6" stroke-dasharray="32 20" stroke-linecap="round" stroke-linejoin="round" opacity="1">
+          <animate attributeName="stroke-dashoffset" from="0" to="-104" dur="${speed}s" repeatCount="indefinite"/>
+        </path>
+        <path d="${path}" fill="none" stroke="white" stroke-width="2.7" stroke-dasharray="8 24" stroke-linecap="round" stroke-linejoin="round" opacity="1">
+          <animate attributeName="stroke-dashoffset" from="0" to="-80" dur="0.42s" repeatCount="indefinite"/>
+        </path>
+        <circle r="5.5" fill="white" opacity="1" filter="url(#beamGlow)">
+          <animateMotion dur="0.85s" repeatCount="indefinite" path="${path}"/>
+        </circle>
+      `;
+      const solarBeamColor = moonVisible ? "#b8d0ff" : sunTheme.label;
+      return `
+      <svg viewBox="0 0 1672 941" width="100%" height="100%" preserveAspectRatio="none">
+        <defs>
+          <filter id="beamGlow">
+            <feGaussianBlur stdDeviation="7" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="sunGlowFilter">
+            <feGaussianBlur stdDeviation="22" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="softGlow">
+            <feGaussianBlur stdDeviation="7" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="moonSurface">
+            <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="3" seed="11" result="noise"/>
+            <feColorMatrix in="noise" type="matrix"
+              values="0 0 0 0 0.45
+                      0 0 0 0 0.50
+                      0 0 0 0 0.62
+                      0 0 0 .24 0" result="texture"/>
+            <feBlend in="SourceGraphic" in2="texture" mode="multiply"/>
+          </filter>
+          <radialGradient id="realSunDisc" cx="36%" cy="32%" r="72%">
+            <stop offset="0%" stop-color="${sunTheme.disc1}"/>
+            <stop offset="38%" stop-color="${sunTheme.disc2}"/>
+            <stop offset="74%" stop-color="${sunTheme.disc3}"/>
+            <stop offset="100%" stop-color="${sunTheme.disc4}"/>
+          </radialGradient>
+          <radialGradient id="realSunGlowOuter" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="${sunTheme.glow1}"/>
+            <stop offset="38%" stop-color="${sunTheme.glow2}"/>
+            <stop offset="76%" stop-color="${sunTheme.glow3}"/>
+            <stop offset="100%" stop-color="rgba(255,170,20,0)"/>
+          </radialGradient>
+          <radialGradient id="realSunGlowMid" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="${sunTheme.glow1}"/>
+            <stop offset="55%" stop-color="${sunTheme.glow2}"/>
+            <stop offset="100%" stop-color="rgba(255,210,80,0)"/>
+          </radialGradient>
+          <radialGradient id="premiumMoonGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(235,245,255,.72)"/>
+            <stop offset="42%" stop-color="rgba(145,180,255,.24)"/>
+            <stop offset="100%" stop-color="rgba(90,130,230,0)"/>
+          </radialGradient>
+          <radialGradient id="premiumMoonDisc" cx="35%" cy="28%" r="76%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="28%" stop-color="#f3f7ff"/>
+            <stop offset="62%" stop-color="#cfd9ee"/>
+            <stop offset="100%" stop-color="#8f9db8"/>
+          </radialGradient>
+        </defs>
+        ${moonVisible ? `
+          <circle cx="${skyX}" cy="${skyY}" r="92"
+            fill="url(#premiumMoonGlow)"
+            filter="url(#sunGlowFilter)"
+            opacity=".82"/>
+          <circle cx="${skyX}" cy="${skyY}" r="58"
+            fill="rgba(210,228,255,.16)"
+            filter="url(#softGlow)"
+            opacity=".68"/>
+          <circle cx="${skyX}" cy="${skyY}" r="35"
+            fill="url(#premiumMoonDisc)"
+            filter="url(#moonSurface)"
+            opacity=".98"/>
+          <circle cx="${skyX - 10}" cy="${skyY - 8}" r="5.5"
+            fill="rgba(95,105,130,.24)"/>
+          <circle cx="${skyX + 8}" cy="${skyY + 7}" r="4.6"
+            fill="rgba(95,105,130,.20)"/>
+          <circle cx="${skyX + 4}" cy="${skyY - 14}" r="3.3"
+            fill="rgba(95,105,130,.18)"/>
+          <circle cx="${skyX - 2}" cy="${skyY + 15}" r="3.8"
+            fill="rgba(95,105,130,.16)"/>
+          <circle cx="${skyX - 12}" cy="${skyY - 12}" r="9"
+            fill="rgba(255,255,255,.30)"
+            opacity=".58"/>
+          <circle cx="${skyX}" cy="${skyY}" r="35"
+            fill="none"
+            stroke="rgba(255,255,255,.38)"
+            stroke-width="1.5"/>
+        ` : `
+          <circle cx="${skyX}" cy="${skyY}" r="112" fill="url(#realSunGlowOuter)" filter="url(#sunGlowFilter)" opacity=".88"/>
+          <circle cx="${skyX}" cy="${skyY}" r="72" fill="url(#realSunGlowMid)" opacity=".62"/>
+          <g stroke="${sunTheme.ray}" stroke-width="4.5" stroke-linecap="round" opacity=".78" filter="url(#softGlow)">
+            <line x1="${skyX}" y1="${skyY - 39}" x2="${skyX}" y2="${skyY - 66}"/>
+            <line x1="${skyX}" y1="${skyY + 39}" x2="${skyX}" y2="${skyY + 66}"/>
+            <line x1="${skyX - 39}" y1="${skyY}" x2="${skyX - 66}" y2="${skyY}"/>
+            <line x1="${skyX + 39}" y1="${skyY}" x2="${skyX + 66}" y2="${skyY}"/>
+            <line x1="${skyX - 29}" y1="${skyY - 29}" x2="${skyX - 51}" y2="${skyY - 51}"/>
+            <line x1="${skyX + 29}" y1="${skyY - 29}" x2="${skyX + 51}" y2="${skyY - 51}"/>
+            <line x1="${skyX - 29}" y1="${skyY + 29}" x2="${skyX - 51}" y2="${skyY + 51}"/>
+            <line x1="${skyX + 29}" y1="${skyY + 29}" x2="${skyX + 51}" y2="${skyY + 51}"/>
+          </g>
+          <circle cx="${skyX}" cy="${skyY}" r="32" fill="url(#realSunDisc)" filter="url(#softGlow)"/>
+          <circle cx="${skyX - 9}" cy="${skyY - 9}" r="8" fill="rgba(255,255,235,.75)"/>
+        `}
+        <g transform="translate(${pvLabelX} ${pvLabelY})">
+          <rect x="0" y="0" width="${pvBoxW}" height="${pvBoxH}" rx="16"
+            fill="rgba(0,0,0,.82)"
+            stroke="${moonVisible ? '#b8d0ff' : sunTheme.label}"
+            stroke-width="4"
+            filter="url(#softGlow)"/>
+          <text x="${pvBoxW / 2}" y="49" text-anchor="middle"
+            fill="${moonVisible ? '#d8e4ff' : sunTheme.label}"
+            stroke="#000000"
+            stroke-width="1.7"
+            paint-order="stroke"
+            font-size="${pvFontSize}"
+            font-weight="900">${pvText}</text>
+        </g>
+        ${pv > 0 ? beam(solarPath, solarBeamColor, "0.85") : ""}
+        ${beam(gridPath, gridFlowColor, gridOn ? "0.95" : "1.35")}
+        ${beam(battPath, battFlowColor, "0.95")}
+        ${beam(invToLoad, battFlowColor, "0.95")}
+        <g transform="translate(1 1)">
+          <rect x="0" y="0" width="320" height="235" rx="24"
+            fill="#000000"
+            stroke="${gridOn ? green : red}"
+            stroke-width="6"/>
+          <text x="15" y="55" fill="#00ff3c" stroke="#000000" stroke-width="2" paint-order="stroke" font-size="54" font-weight="900">GRID</text>
+          <text x="190" y="55" fill="#00ff3c" stroke="#000000" stroke-width="2" paint-order="stroke" font-size="54" font-weight="900">${gridOn ? "ON" : "OFF"}</text>
+          <text x="15" y="105" fill="#00ff3c" stroke="#000000" stroke-width="1.8" paint-order="stroke" font-size="32" font-weight="900">VOLTAGE</text>
+          <text x="190" y="105" fill="#00ff3c" stroke="#000000" stroke-width="1.8" paint-order="stroke" font-size="36" font-weight="900">${gridVoltage.toFixed(1)}</text>
+          <text x="15" y="155" fill="#00ff3c" stroke="#000000" stroke-width="1.8" paint-order="stroke" font-size="32" font-weight="900">IMPORT</text>
+          <text x="190" y="155" fill="#00ff3c" stroke="#000000" stroke-width="1.8" paint-order="stroke" font-size="36" font-weight="900">${importToday.toFixed(2)}</text>
+          <text x="15" y="205" fill="#00ff3c" stroke="#000000" stroke-width="1.8" paint-order="stroke" font-size="32" font-weight="900">EXPORT</text>
+          <text x="190" y="205" fill="#00ff3c" stroke="#000000" stroke-width="1.8" paint-order="stroke" font-size="36" font-weight="900">${exportToday.toFixed(2)}</text>
+        </g>
+        <foreignObject x="365" y="475" width="160" height="80">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:80px;display:flex;align-items:center;justify-content:center;">
+            <img
+              src="/local/deye_logo.png"
+              style="width:120px;height:70px;object-fit:contain;background:white;border-radius:10px;padding:6px;box-sizing:border-box;"
+            />
+          </div>
+        </foreignObject>
+        <g transform="translate(378 565)">
+          <rect x="0" y="0" width="138" height="48" rx="15"
+            fill="#000000"
+            stroke="#3db8ff"
+            stroke-width="4"/>
+          <text x="69" y="33" text-anchor="middle"
+            fill="#ffffff"
+            stroke="#000000"
+            stroke-width="1.2"
+            paint-order="stroke"
+            font-size="27"
+            font-weight="900">${invTemp.toFixed(1)} °C</text>
+        </g>
+        <g transform="translate(12 805)">
+          <rect x="0" y="0" width="312" height="108" rx="26"
+            fill="#000000"
+            stroke="#3db8ff"
+            stroke-width="6"/>
+          <text x="156" y="53" text-anchor="middle"
+            fill="#3db8ff"
+            stroke="#000000"
+            stroke-width="1.6"
+            paint-order="stroke"
+            font-size="54"
+            font-weight="900">${fmtPower(load)}</text>
+          <text x="156" y="88" text-anchor="middle"
+            fill="#ffffff"
+            stroke="#000000"
+            stroke-width=".9"
+            paint-order="stroke"
+            font-size="31"
+            font-weight="900">House Load</text>
+        </g>
+        <g>
+          <rect x="${battCenterX - 78}" y="405" width="156" height="54" rx="15"
+            fill="rgba(0,0,0,0.78)"
+            stroke="${neonBlue}"
+            stroke-width="3"
+            filter="url(#softGlow)"/>
+          <text x="${battCenterX}" y="445" text-anchor="middle"
+            fill="${neonBlue}"
+            stroke="#000000"
+            stroke-width="2.8"
+            paint-order="stroke"
+            font-size="55"
+            font-weight="900">${battSocSafe.toFixed(0)}%</text>
+          <rect x="${battBarX - 7}" y="${battBarYTop - 7}" width="${battBarW + 14}" height="${battBarMaxH + 14}" rx="15"
+            fill="rgba(0,20,10,0.45)"
+            stroke="#000000"
+            stroke-width="5"/>
+          <rect x="${battBarX - 4}" y="${battBarYTop - 4}" width="${battBarW + 8}" height="${battBarMaxH + 8}" rx="13"
+            fill="none"
+            stroke="${neonBlue}"
+            stroke-width="4"
+            filter="url(#softGlow)"/>
+          <rect x="${battBarX}" y="${battBarYTop}" width="${battBarW}" height="${battBarMaxH}" rx="9"
+            fill="#001b0a"
+            stroke="#001b0a"
+            stroke-width="2"/>
+          <rect x="${battBarX}" y="${battBarY}" width="${battBarW}" height="${battBarH}" rx="9"
+            fill="${batteryColor}"
+            opacity="1"
+            filter="url(#softGlow)"/>
+          <line x1="${battBarX}" y1="520" x2="${battBarX + battBarW}" y2="520" stroke="#003d15" stroke-width="5"/>
+          <line x1="${battBarX}" y1="546" x2="${battBarX + battBarW}" y2="546" stroke="#003d15" stroke-width="5"/>
+          <line x1="${battBarX}" y1="572" x2="${battBarX + battBarW}" y2="572" stroke="#003d15" stroke-width="5"/>
+          <line x1="${battBarX}" y1="598" x2="${battBarX + battBarW}" y2="598" stroke="#003d15" stroke-width="5"/>
+          <rect x="${tempBoxX}" y="${tempBoxY}" width="156" height="49" rx="13"
+            fill="rgba(0,0,0,0.78)"
+            stroke="${neonBlue}"
+            stroke-width="3"
+            filter="url(#softGlow)"/>
+          <text x="${tempBoxX + 78}" y="${tempBoxY + 35}" text-anchor="middle"
+            fill="${neonBlue}"
+            stroke="#000000"
+            stroke-width="2.4"
+            paint-order="stroke"
+            font-size="40"
+            font-weight="900">${battTemp.toFixed(1)} °C</text>
+          <rect x="${battCenterX - 68}" y="645" width="136" height="51" rx="13"
+            fill="rgba(0,0,0,0.78)"
+            stroke="${neonBlue}"
+            stroke-width="3"
+            filter="url(#softGlow)"/>
+          <text x="${battCenterX}" y="690" text-anchor="middle"
+            fill="${neonBlue}"
+            stroke="#000000"
+            stroke-width="2.7"
+            paint-order="stroke"
+            font-size="50"
+            font-weight="900">${fmtPower(batt)}</text>
+        </g>
+      </svg>
+      `;
+    ]]]
