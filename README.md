@@ -1,50 +1,121 @@
-# ☀️ HASolarDev — Animated Solar Card for Home Assistant
+# ☀️ HASolarDev — Animated Solar Dashboard Energy Flow for Home Assistant
 
-A beautiful, fully animated solar dashboard card built with `custom:button-card`.  
-Displays real-time solar production, battery status, grid info and house load —  
-with a dynamic background and sun/moon that change based on the time of day.
+A modern animated solar dashboard designed for Home Assistant 
 
-![preview](images/demo.png)
+Transform your energy data into a beautiful real-time visualization featuring solar production, battery status, grid import/export tracking and dynamic day/night effects.
+
+---
+
+## ⭐ Support the Project
+
+This project is developed and maintained entirely in my free time and shared with the Home Assistant community for free.
+
+If you enjoy using this dashboard, please consider:
+
+⭐ Starring this repository
+
+☕ Supporting development on Ko-fi
+
+Your support helps fund:
+
+- New features
+- Bug fixes
+- Home Assistant compatibility updates
+- Visual improvements and animations
+- Documentation and community support
+
+### Buy me a coffee
+
+[![Support on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/YOUR_KOFI_USERNAME)
+
+Every coffee helps keep the project alive and improving.
+
+---
+
+## 📸 Preview
+
+![Dashboard Preview](images/HA_Solar_Dey.png)
 
 ---
 
 ## ✨ Features
 
-- 🌅 Dynamic background — 10 stages from before sunrise to late night
-- ☀️ Animated sun arc across the sky
-- 🌙 Realistic moon during night stages
-- ⚡ Animated energy flow beams (solar → inverter → battery → load)
-- 🔋 Live battery bar with color indicator (green / yellow / red)
-- 📊 Grid voltage, import/export, inverter & battery temperature
-- 🎨 Sun color theme changes per time of day
+- Real-time solar production monitoring
+- Battery charge and discharge visualization
+- Grid import/export tracking
+- Dynamic animated energy flow
+- Automatic day/night scene switching
+- Animated sun that follows the daily solar cycle
+- Realistic lighting effects throughout the day
+- Battery color changes based on charge level
+- Live battery power display
+- Grid voltage monitoring
+- Battery temperature monitoring
+- Responsive design for desktop and mobile devices
+
+---
+
+## 🎯 Why this project exists
+
+Most solar dashboards focus on displaying numbers.
+
+HASolarDev focuses on helping users understand energy flow at a glance through animations, visual indicators and dynamic effects.
+
+The goal is to create a dashboard that is both informative and enjoyable to use every day.
 
 ---
 
 ## 📋 Requirements
 
-- [custom:button-card](https://github.com/custom-cards/button-card) (via HACS)
-- Deye inverter integrated via [Solarman](https://github.com/StephanJoubert/home_assistant_solarman) or similar
-- `sun.sun` entity enabled in Home Assistant
+- Home Assistant
+- Deye inverter integration
+- custom:button-card
+- card-mod
+- Browser Mod (optional but recommended)
 
 ---
 
 ## 🚀 Installation
 
-1. Install `button-card` via HACS
-2. Copy all images from the `images/` folder to `/config/www/` in Home Assistant
-3. Add a new manual card in your dashboard and paste the contents of `HA_Solar_Dev.yaml`
-4. Adjust sensor names to match your setup
+1. Install `custom:button-card`
+2. Download the files from this repository
+3. Copy the images to your `/config/www/` folder
+4. Add the dashboard card to Home Assistant
+5. Configure the required entity IDs
+6. Reload Home Assistant
 
 ---
 
-## ☕ Support
+## 🔄 Ongoing Development
 
-If you enjoy this card, consider buying me a coffee!
+This dashboard is actively being improved.
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/surcix)
+Planned improvements include:
+
+- Additional animations
+- More inverter compatibility
+- Improved mobile layouts
+- Better customization options
+- New visual themes
+
+Suggestions and pull requests are always welcome.
+
+---
+
+## ❤️ Community
+
+If you are using this project:
+
+- Leave a ⭐ Star
+- Share screenshots of your setup
+- Report bugs
+- Suggest improvements
+- Support development through Ko-fi
 
 ---
 
 ## 📄 License
 
-MIT License — free to use and modify.
+MIT License
+
+Feel free to use, modify and improve the project.
