@@ -34,7 +34,7 @@ Every coffee helps keep the project alive and improving.
 
 ## 📸 Preview
 
-![Dashboard Preview](images/HA_Solar_Dey.png)
+![Dashboard Preview](images/demo.png)
 
 ---
 
