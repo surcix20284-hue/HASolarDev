@@ -68,7 +68,7 @@ The goal is to create a dashboard that is both informative and enjoyable to use 
 ## 📋 Requirements
 
 - Home Assistant
-- Deye inverter integration
+- solarman integration
 - custom:button-card
 - card-mod
 - Browser Mod (optional but recommended)
@@ -81,8 +81,9 @@ The goal is to create a dashboard that is both informative and enjoyable to use 
 2. Download the files from this repository
 3. Copy the images to your `/config/www/` folder
 4. Add the dashboard card to Home Assistant
-5. Configure the required entity IDs
-6. Reload Home Assistant
+5. Copy the code from HA_solar_dev.yaml
+6. Configure the required entity IDs
+7. Reload Home Assistant
 
 ---
 
